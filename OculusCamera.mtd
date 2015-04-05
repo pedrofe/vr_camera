@@ -1,0 +1,15 @@
+# oculusCamera                    0x00070007
+[node oculusCamera]
+    maya.name               STRING  "camera"
+    maya.id                 INT     0x00070007
+    maya.translator         STRING  "oculusCamera"
+     
+    [attr mode]
+        maya.name           STRING  "aiMode"
+        default             INT     0
+     
+    [attr eyeSeparation]
+        maya.name           STRING  "aiEyeSeparation"
+        softmin             FLOAT   0
+        softmax             FLOAT   1
+        default             FLOAT   0.65
