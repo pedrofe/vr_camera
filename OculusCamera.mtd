@@ -13,3 +13,35 @@
         softmin             FLOAT   0
         softmax             FLOAT   1
         default             FLOAT   0.65
+
+    [attr topMergeMode]
+        maya.name           STRING  "aiTopMergeMode"
+        default             INT     2
+     
+    [attr topMergeAngle]
+        maya.name           STRING  "aiTopMergeAngle"
+        softmin             FLOAT   0
+        max                 FLOAT   90
+        default             FLOAT   0
+        
+    [attr topMergeExp]
+        maya.name           STRING  "aiTopMergeExp"
+        min                 FLOAT   0
+        softmax             FLOAT   4
+        default             FLOAT   1
+        
+    [attr bottomMergeMode]
+        maya.name           STRING  "aiBottomMergeMode"
+        default             INT     2
+     
+    [attr bottomMergeAngle]
+        maya.name           STRING  "aiBottomMergeAngle"
+        min                 FLOAT   -90
+        softmax             FLOAT   0
+        default             FLOAT   0
+        
+    [attr bottomMergeExp]
+        maya.name           STRING  "aiBottomMergeExp"
+        min                 FLOAT   0
+        softmax             FLOAT   4
+        default             FLOAT   1
