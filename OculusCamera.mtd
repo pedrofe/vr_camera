@@ -8,6 +8,10 @@
         maya.name           STRING  "aiMode"
         default             INT     0
      
+    [attr projection]
+        maya.name           STRING  "aiProjection"
+        default             INT     0
+
     [attr eyeSeparation]
         maya.name           STRING  "aiEyeSeparation"
         softmin             FLOAT   0

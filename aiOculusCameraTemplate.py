@@ -3,6 +3,7 @@ class aiOculusCameraTemplate(templates.AttributeTemplate):
     def setup(self):
         self.beginLayout("Main Attributes", collapse=False)
         self.addControl("aiMode")
+        self.addControl("aiProjection")
         self.addControl("aiEyeSeparation")
         self.endLayout()
         

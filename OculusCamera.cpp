@@ -8,13 +8,14 @@ AI_CAMERA_NODE_EXPORT_METHODS(OculusCameraMethods);
 namespace
 {
 #define _mode             (params[0].INT  )
-#define _eyeSeparation    (params[1].FLT )
-#define _topMergeMode     (params[2].INT  )
-#define _topMergeAngle    (params[3].FLT )
-#define _topMergeExp      (params[4].FLT )
-#define _bottomMergeMode  (params[5].INT  )
-#define _bottomMergeAngle (params[6].FLT )
-#define _bottomMergeExp   (params[7].FLT )
+#define _projection       (params[1].INT  )
+#define _eyeSeparation    (params[2].FLT )
+#define _topMergeMode     (params[3].INT  )
+#define _topMergeAngle    (params[4].FLT )
+#define _topMergeExp      (params[5].FLT )
+#define _bottomMergeMode  (params[6].INT  )
+#define _bottomMergeAngle (params[7].FLT )
+#define _bottomMergeExp   (params[8].FLT )
 
 enum mode
 {
@@ -29,6 +30,20 @@ const char* mode_list[] =
     "Over Under",
     "Left Eye",
     "Right Eye",
+    NULL
+};
+
+enum projection
+{
+   P_LATLONG = 0,
+   P_CUBEMAP_NVD,
+   P_CUBEMAP_3x2
+};
+const char* projection_list[] =
+{
+    "Latlong",
+    "Cube Map (NVIDIA)",
+    "Cube Map (3x2)",
     NULL
 };
 
@@ -51,10 +66,12 @@ enum eye
    E_RIGHT_EYE = 0,
    E_LEFT_EYE
 };
+
 };
 node_parameters
 {
    AiParameterEnum("mode", 0, mode_list);
+   AiParameterEnum("projection", 0, projection_list);
    AiParameterFlt("eyeSeparation", 0.65f);
    AiParameterEnum("topMergeMode", 2, merge_mode_list);
    AiParameterFlt("topMergeAngle", 0.0f);
@@ -80,6 +97,7 @@ camera_create_ray
    const AtParamValue* params = AiNodeGetParams(node);
     
    int mode = _mode;
+   int projection = _projection;
    float eyeSeparation = _eyeSeparation;
    
    int topMergeMode = _topMergeMode;
@@ -95,7 +113,19 @@ camera_create_ray
    int currentEye = E_RIGHT_EYE;
    float sx = input->sx;
    float sy = input->sy;
+
+   // These values are needed for every projection to be able to calculate
+   //   the camera position due eye separation and pole merge
+   float theta = 0.0f;
+   float phi = 0.0f;
+   float sin_theta = 0.0f;
+   float cos_theta = 0.0f;
     
+   ////////////////////////////////////////////////////
+   // Stereoscopic mode.
+   //  Decide what eye we are rendering. If needed update sx and sy.
+   ////////////////////////////////////////////////////
+
    if(mode == M_SBS)
    {
       if(input->sx < 0)
@@ -131,30 +161,151 @@ camera_create_ray
       currentEye = E_RIGHT_EYE;
    }
  
-   // Calculate spherical angles
-   float theta = AI_PI      * sx;
-   float phi   = AI_PIOVER2 * sy;
-     
-   const float sin_theta = sinf(theta);
-   const float cos_theta = cosf(theta);
-   const float sin_phi = sinf(phi);
-   const float cos_phi = cosf(phi);
-   // normalized direction
-   output->dir.x =  sin_theta * cos_phi;
-   output->dir.y =  sin_phi;
-   output->dir.z = -cos_theta * cos_phi;
-   // derivative with respect to x
-   output->dDdx.x = cos_theta;
-   output->dDdx.y = 0.f;
-   output->dDdx.z = sin_theta;
-   output->dDdx *= input->dsx * AI_PI * cos_phi;
-     
-   // derivative with respect to y
-   output->dDdy.x = -sin_theta * sin_phi;
-   output->dDdy.y = cos_phi;
-   output->dDdy.z = cos_theta * sin_phi;
-   output->dDdy *= input->dsy * AI_PIOVER2;
+   ////////////////////////////////////////////////////
+   // Proyection type
+   ////////////////////////////////////////////////////
+
+   if (projection == P_LATLONG)
+   {
+      // Calculate spherical angles
+      theta = AI_PI      * sx;
+      phi   = AI_PIOVER2 * sy;
+        
+      sin_theta = sinf(theta);
+      cos_theta = cosf(theta);
+      
+      const float sin_phi = sinf(phi);
+      const float cos_phi = cosf(phi);
+      // normalized direction
+      output->dir.x =  sin_theta * cos_phi;
+      output->dir.y =  sin_phi;
+      output->dir.z = -cos_theta * cos_phi;
+      // derivative with respect to x
+      output->dDdx.x = cos_theta;
+      output->dDdx.y = 0.f;
+      output->dDdx.z = sin_theta;
+      output->dDdx *= input->dsx * AI_PI * cos_phi;
+        
+      // derivative with respect to y
+      output->dDdy.x = -sin_theta * sin_phi;
+      output->dDdy.y = cos_phi;
+      output->dDdy.z = cos_theta * sin_phi;
+      output->dDdy *= input->dsy * AI_PIOVER2;
+   }
+   else if(projection == P_CUBEMAP_NVD)
+   {
+      if (sx < -2*(1.0f / 3.0f))
+      {
+         // P_PX
+         output->dir.x =  1.0f;
+         output->dir.y =  -6*(sx+(5.0f/6.0f));
+         output->dir.z =  sy;
+      }
+      else if (sx < -(1.0f / 3.0f))
+      {
+         // P_NX
+         output->dir.x =  -1.0f;
+         output->dir.y =  6*(sx+(3.0f/6.0f));
+         output->dir.z =  sy;
+      }
+      else if (sx < 0.0f)
+      {
+         // P_PZ
+         output->dir.x =  6*(sx+(1.0f/6.0f));
+         output->dir.y =  -sy;
+         output->dir.z =  1.0f;
+      }
+      else if (sx < (1.0f / 3.0f))
+      {
+         // P_NZ
+         output->dir.x =  6*(sx-(1.0f/6.0f));
+         output->dir.y =  sy;
+         output->dir.z =  -1.0f;
+      }
+      else if (sx < (2.0f / 3.0f))
+      {
+         // P_PY
+         output->dir.x =  6*(sx-(3.0f/6.0f));
+         output->dir.y =  1.0f;
+         output->dir.z =  sy;
+      }
+      else
+      {
+         // P_NY
+         output->dir.x =  -6*(sx-(5.0f/6.0f));
+         output->dir.y =  -1.0f;
+         output->dir.z =  sy;
+      }
+
+      theta = atan2(output->dir.x,output->dir.z);
+      phi = AI_PIOVER2 - acos(output->dir.y / sqrt(output->dir.x * output->dir.x + output->dir.y * output->dir.y + output->dir.z * output->dir.z ));
+
+      sin_theta = sinf(theta);
+      cos_theta = cosf(theta);
+   }
+   else if(projection == P_CUBEMAP_3x2)
+   {
+      if (sy < 0.0f)
+      {
+         if (sx < -(1.0f / 3.0f))
+         {
+            // P_PX
+            output->dir.x =  1.0f;
+            output->dir.y =  2*(sy+0.5f);
+            output->dir.z =  3*(sx+(2.0f/3.0f));
+         }
+         else if (sx < (1.0f / 3.0f))
+         {
+            // P_PZ
+            output->dir.x =  -3*(sx);
+            output->dir.y =  2*(sy+0.5f);
+            output->dir.z =  1.0f;
+         }
+         else
+         {
+            // P_NX
+            output->dir.x =  -1.0f;
+            output->dir.y =  2*(sy+0.5f);
+            output->dir.z =  -3*(sx-(2.0f/3.0f));
+         }
+      }
+      else
+      {
+         if (sx < -(1.0f / 3.0f))
+         {
+            // P_NZ
+            output->dir.x =  3*(sx+(2.0f/3.0f));
+            output->dir.y =  2*(sy-0.5f);
+            output->dir.z =  -1.0f;
+         }
+         else if (sx < (1.0f / 3.0f))
+         {
+            // P_PY
+            output->dir.x =  -3*(sx);
+            output->dir.y =  1.0f;
+            output->dir.z =  -2*(sy-0.5f);
+         }
+         else
+         {
+            // P_NY
+            output->dir.x =  -3*(sx-(2.0f/3.0f));
+            output->dir.y =  -1.0f;
+            output->dir.z =  2*(sy-0.5f);
+         }
+      }
+
+      theta = atan2(output->dir.x,output->dir.z);
+      phi = AI_PIOVER2 - acos(output->dir.y / sqrt(output->dir.x * output->dir.x + output->dir.y * output->dir.y + output->dir.z * output->dir.z ));
+
+      sin_theta = sinf(theta);
+      cos_theta = cosf(theta);
+   }
     
+
+   ////////////////////////////////////////////////////
+   // Update origin position usinf eye separation
+   ////////////////////////////////////////////////////
+
    if(currentEye == E_LEFT_EYE)
    {
       output->origin.x = -0.5*eyeSeparation*cos_theta;
@@ -166,6 +317,11 @@ camera_create_ray
       output->origin.z = 0.5*eyeSeparation*sin_theta;
    }
    
+
+   ////////////////////////////////////////////////////
+   // Merge poles to avoid artifacts
+   ////////////////////////////////////////////////////
+
    // merge method:
    //  phi > 0:
    //    linear:
