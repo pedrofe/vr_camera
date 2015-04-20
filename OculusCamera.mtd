@@ -1,7 +1,7 @@
-# oculusCamera                    0x00070007
+# THIRDPARTY_NODEID_OCULUSCAMERA      0x00116500
 [node oculusCamera]
     maya.name               STRING  "camera"
-    maya.id                 INT     0x00070007
+    maya.id                 INT     0x00116500
     maya.translator         STRING  "oculusCamera"
      
     [attr mode]
