@@ -180,17 +180,6 @@ camera_create_ray
       output->dir.x =  sin_theta * cos_phi;
       output->dir.y =  sin_phi;
       output->dir.z = -cos_theta * cos_phi;
-      // derivative with respect to x
-      output->dDdx.x = cos_theta;
-      output->dDdx.y = 0.f;
-      output->dDdx.z = sin_theta;
-      output->dDdx *= input->dsx * AI_PI * cos_phi;
-        
-      // derivative with respect to y
-      output->dDdy.x = -sin_theta * sin_phi;
-      output->dDdy.y = cos_phi;
-      output->dDdy.z = cos_theta * sin_phi;
-      output->dDdy *= input->dsy * AI_PIOVER2;
    }
    else if(projection == P_CUBEMAP_NVD)
    {
