@@ -22,7 +22,8 @@ namespace
 enum mode
 {
    M_SBS = 0,
-   M_OB,
+   M_OU,
+   M_UO,
    M_LE,
    M_RE
 };
@@ -30,6 +31,7 @@ const char* mode_list[] =
 {
     "Side by Side",
     "Over Under",
+    "Under Over",
     "Left Eye",
     "Right Eye",
     NULL
@@ -167,7 +169,20 @@ camera_create_ray
          sx = 2 * (input->sx - 0.5f);
       }     
    }
-   else if (mode == M_OB)
+   else if (mode == M_OU)
+   {
+      if(input->sy < 0)
+      {
+         currentEye = E_RIGHT_EYE;
+         sy = 2 * (input->sy + 0.5f);
+      }
+      else
+      {
+         currentEye = E_LEFT_EYE;
+         sy = 2 * (input->sy - 0.5f);
+      }    
+   }
+   else if (mode == M_UO)
    {
       if(input->sy < 0)
       {
@@ -390,8 +405,8 @@ camera_create_ray
          filter_globals = AiShaderGlobals();
          //filter_globals.tid = input->tid;
          filter_globals->Op = NULL;
-         //filter_globals->x  = theta / AI_PI;
-         //filter_globals->y  = phi / AI_PIOVER2;
+         //filter_globals->x  = input->x;
+         //filter_globals->y  = input->y;
          filter_globals->u  = 0.5f * (theta / AI_PI + 1.0f);
          filter_globals->v  = 0.5f * (phi / AI_PIOVER2 + 1.0f);
 
