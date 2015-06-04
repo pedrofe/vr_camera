@@ -49,3 +49,8 @@
         min                 FLOAT   0
         softmax             FLOAT   4
         default             FLOAT   1
+
+    [attr mergeShader]
+        maya.name           STRING  "aiMergeShader"
+        linkable            BOOL    True
+

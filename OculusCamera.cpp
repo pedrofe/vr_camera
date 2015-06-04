@@ -3,6 +3,7 @@
 #include <ai_nodes.h>
 #include <cstring>
 #include <ai_metadata.h>
+#include <ai_shaders.h>
 
 AI_CAMERA_NODE_EXPORT_METHODS(OculusCameraMethods);
 namespace
@@ -16,6 +17,7 @@ namespace
 #define _bottomMergeMode  (params[6].INT  )
 #define _bottomMergeAngle (params[7].FLT )
 #define _bottomMergeExp   (params[8].FLT )
+#define _mergeShader      (params[9].FLT )
 
 enum mode
 {
@@ -51,13 +53,15 @@ enum merge_mode
 {
    M_OFF = 0,
    M_LINEAR,
-   M_COS
+   M_COS,
+   M_SHADER
 };
 const char* merge_mode_list[] =
 {
     "Off",
     "Linear",
     "Cos",
+    "Shader",
     NULL
 };
 
@@ -67,7 +71,15 @@ enum eye
    E_LEFT_EYE
 };
 
+enum merge_zone
+{
+   Z_NONE = 0,
+   Z_UP,
+   Z_BOTTOM
 };
+
+};
+
 node_parameters
 {
    AiParameterEnum("mode", 0, mode_list);
@@ -79,6 +91,7 @@ node_parameters
    AiParameterEnum("bottomMergeMode", 2, merge_mode_list);
    AiParameterFlt("bottomMergeAngle", 0.0f);
    AiParameterFlt("bottomMergeExp", 1.0f);
+   AiParameterRGB("mergeShader", 0.0f, 0.0f, 0.0f);
 }
 node_initialize
 {
@@ -106,11 +119,26 @@ camera_create_ray
    int bottomMergeMode = _bottomMergeMode;
    float bottomMergeAngle = _bottomMergeAngle * AI_PI / 180.0f;
    float bottomMergeExp = _bottomMergeExp;
+
+   float mergeValue = _mergeShader;
+   AtNode* mergeShader = AiNodeGetLink(node, "mergeShader");
+
+   AtShaderGlobals* filter_globals;
     
    // TODO:
-   //Check that topMergeAngle, bottomMergeAngle, topMergeExp and bottomMergeExp have correct values
-    
+   //Check that topMergeExp and bottomMergeExp have correct values
+   if(topMergeAngle > AI_PIOVER2)
+      topMergeAngle = AI_PIOVER2;
+   else if(topMergeAngle < -AI_PIOVER2)
+      topMergeAngle = -AI_PIOVER2;
+   if(bottomMergeAngle < -AI_PIOVER2)
+      bottomMergeAngle = -AI_PIOVER2;
+   else if(bottomMergeAngle > topMergeAngle)
+      bottomMergeAngle = topMergeAngle;
+
+
    int currentEye = E_RIGHT_EYE;
+   int mergeZone = Z_NONE;
    float sx = input->sx;
    float sy = input->sy;
 
@@ -322,37 +350,60 @@ camera_create_ray
    //      (2*phi + pi) / (pi + 2*offset)
    //    cos:
    //      ( cos( (phi - offset) * ( -pi / (pi + 2*offset) ) ) ) ^ exp
-   
+
    if(phi > topMergeAngle)
    {
-      float factor = 1.0f;
-      if(topMergeMode == M_LINEAR)
-      {
-         factor = (-2.0f * phi + AI_PI) / (AI_PI - 2*topMergeAngle);
-      }
-      else if(topMergeMode == M_COS)
-      {
-         factor = powf( MAX(0.0f, cosf( (phi - topMergeAngle) * (AI_PI / (AI_PI - 2.0f*topMergeAngle)) )), topMergeExp );
-      }
-      
-      output->origin.x *= factor;
-      output->origin.z *= factor;
+      mergeZone = Z_UP;
    }
    else if(phi < bottomMergeAngle)
    {
-      float factor = 1.0f;
-      if(bottomMergeMode == M_LINEAR)
-      {
-         factor = (2.0f * phi + AI_PI) / (AI_PI + 2*bottomMergeAngle);
-      }
-      else if(bottomMergeMode == M_COS)
-      {
-         factor = powf( MAX(0.0f, cosf( (phi - bottomMergeAngle) * (-AI_PI / (AI_PI + 2.0f*bottomMergeAngle)) )), bottomMergeExp );
-      }
-      
-      output->origin.x *= factor;
-      output->origin.z *= factor;
+      mergeZone = Z_BOTTOM;
    }
+
+
+   float factor = 1.0f;
+   if(((topMergeMode == M_LINEAR) && (mergeZone == Z_UP)) ||
+      ((bottomMergeMode == M_LINEAR) && (mergeZone == Z_BOTTOM)))
+   {
+      if(mergeZone == Z_UP)
+         factor = (-2.0f * phi + AI_PI) / (AI_PI - 2*topMergeAngle);
+      else
+         factor = (2.0f * phi + AI_PI) / (AI_PI + 2*bottomMergeAngle);
+   }
+   else if(((topMergeMode == M_COS) && (mergeZone == Z_UP)) ||
+      ((bottomMergeMode == M_COS) && (mergeZone == Z_BOTTOM)))
+   {
+      if(mergeZone == Z_UP)
+         factor = powf( MAX(0.0f, cosf( (phi - topMergeAngle) * (AI_PI / (AI_PI - 2.0f*topMergeAngle)) )), topMergeExp );
+      else
+         factor = powf( MAX(0.0f, cosf( (phi - bottomMergeAngle) * (-AI_PI / (AI_PI + 2.0f*bottomMergeAngle)) )), bottomMergeExp );
+   }
+   else if(((topMergeMode == M_SHADER) && (mergeZone == Z_UP)) ||
+      ((bottomMergeMode == M_SHADER) && (mergeZone == Z_BOTTOM)))
+   {
+      if(mergeShader == NULL)
+      {
+         factor = mergeValue;
+      }
+      else
+      {
+         filter_globals = AiShaderGlobals();
+         //filter_globals.tid = input->tid;
+         filter_globals->Op = NULL;
+         //filter_globals->x  = theta / AI_PI;
+         //filter_globals->y  = phi / AI_PIOVER2;
+         filter_globals->u  = 0.5f * (theta / AI_PI + 1.0f);
+         filter_globals->v  = 0.5f * (phi / AI_PIOVER2 + 1.0f);
+
+         AiShaderEvaluate(mergeShader, filter_globals);
+         factor = filter_globals->out.RGB.r;
+         AiShaderGlobalsDestroy(filter_globals);
+      }
+   }
+   
+   output->origin.x *= factor;
+   output->origin.z *= factor;
+
 }
 node_loader
 {

@@ -15,6 +15,9 @@ class aiOculusCameraTemplate(templates.AttributeTemplate):
         self.addControl("aiBottomMergeMode")
         self.addControl("aiBottomMergeAngle")
         self.addControl("aiBottomMergeExp")
+        self.addSeparator()
+        self.addControl("aiMergeShader")
         self.endLayout()
+
         
 templates.registerTranslatorUI(aiOculusCameraTemplate, "camera", "oculusCamera")
