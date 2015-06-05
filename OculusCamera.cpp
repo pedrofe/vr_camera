@@ -8,16 +8,17 @@
 AI_CAMERA_NODE_EXPORT_METHODS(OculusCameraMethods);
 namespace
 {
-#define _mode             (params[0].INT  )
-#define _projection       (params[1].INT  )
-#define _eyeSeparation    (params[2].FLT )
-#define _topMergeMode     (params[3].INT  )
-#define _topMergeAngle    (params[4].FLT )
-#define _topMergeExp      (params[5].FLT )
-#define _bottomMergeMode  (params[6].INT  )
-#define _bottomMergeAngle (params[7].FLT )
-#define _bottomMergeExp   (params[8].FLT )
-#define _mergeShader      (params[9].FLT )
+#define _mode              (params[0].INT  )
+#define _projection        (params[1].INT  )
+#define _eyeSeparation     (params[2].FLT )
+#define _eyeToNeckDistance (params[3].FLT )
+#define _topMergeMode      (params[4].INT  )
+#define _topMergeAngle     (params[5].FLT )
+#define _topMergeExp       (params[6].FLT )
+#define _bottomMergeMode   (params[7].INT  )
+#define _bottomMergeAngle  (params[8].FLT )
+#define _bottomMergeExp    (params[9].FLT )
+#define _mergeShader       (params[10].FLT )
 
 enum mode
 {
@@ -87,6 +88,7 @@ node_parameters
    AiParameterEnum("mode", 0, mode_list);
    AiParameterEnum("projection", 0, projection_list);
    AiParameterFlt("eyeSeparation", 0.65f);
+   AiParameterFlt("eyeToNeckDistance", 0.65f);
    AiParameterEnum("topMergeMode", 2, merge_mode_list);
    AiParameterFlt("topMergeAngle", 0.0f);
    AiParameterFlt("topMergeExp", 1.0f);
@@ -114,6 +116,7 @@ camera_create_ray
    int mode = _mode;
    int projection = _projection;
    float eyeSeparation = _eyeSeparation;
+   float eyeToNeckDistance = _eyeToNeckDistance;
    
    int topMergeMode = _topMergeMode;
    float topMergeAngle = _topMergeAngle * AI_PI / 180.0f;
@@ -340,13 +343,13 @@ camera_create_ray
 
    if(currentEye == E_LEFT_EYE)
    {
-      output->origin.x = -0.5*eyeSeparation*cos_theta;
-      output->origin.z = -0.5*eyeSeparation*sin_theta;
+      output->origin.x = -0.5*eyeSeparation*cos_theta + eyeToNeckDistance*sin_theta;
+      output->origin.z = -0.5*eyeSeparation*sin_theta - eyeToNeckDistance*cos_theta;
    }
    else
    {
-      output->origin.x = 0.5*eyeSeparation*cos_theta;
-      output->origin.z = 0.5*eyeSeparation*sin_theta;
+      output->origin.x = 0.5*eyeSeparation*cos_theta + eyeToNeckDistance*sin_theta;
+      output->origin.z = 0.5*eyeSeparation*sin_theta - eyeToNeckDistance*cos_theta;
    }
    
 

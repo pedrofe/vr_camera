@@ -5,6 +5,7 @@ class aiOculusCameraTemplate(templates.AttributeTemplate):
         self.addControl("aiMode")
         self.addControl("aiProjection")
         self.addControl("aiEyeSeparation")
+        self.addControl("aiEyeToNeckDistance")
         self.endLayout()
         
         self.beginLayout("Pole Merging", collapse=False)

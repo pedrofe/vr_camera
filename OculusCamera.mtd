@@ -18,6 +18,12 @@
         softmax             FLOAT   1
         default             FLOAT   0.65
 
+    [attr eyeToNeckDistance]
+        maya.name           STRING  "aiEyeToNeckDistance"
+        softmin             FLOAT   0
+        softmax             FLOAT   1
+        default             FLOAT   0.0
+
     [attr topMergeMode]
         maya.name           STRING  "aiTopMergeMode"
         default             INT     2
