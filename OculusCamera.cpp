@@ -269,7 +269,7 @@ camera_create_ray
          output->dir.z =  sy;
       }
 
-      theta = atan2(output->dir.x,output->dir.z);
+      theta = atan2(output->dir.x,-output->dir.z);
       phi = AI_PIOVER2 - acos(output->dir.y / sqrt(output->dir.x * output->dir.x + output->dir.y * output->dir.y + output->dir.z * output->dir.z ));
 
       sin_theta = sinf(theta);
@@ -326,7 +326,7 @@ camera_create_ray
          }
       }
 
-      theta = atan2(output->dir.x,output->dir.z);
+      theta = atan2(output->dir.x,-output->dir.z);
       phi = AI_PIOVER2 - acos(output->dir.y / sqrt(output->dir.x * output->dir.x + output->dir.y * output->dir.y + output->dir.z * output->dir.z ));
 
       sin_theta = sinf(theta);
