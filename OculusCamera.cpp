@@ -81,6 +81,11 @@ enum merge_zone
    Z_BOTTOM
 };
 
+struct CameraData
+{
+   AtShaderGlobals* sg;
+};
+
 };
 
 node_parameters
@@ -99,7 +104,10 @@ node_parameters
 }
 node_initialize
 {
-   AiCameraInitialize(node, NULL);
+   CameraData *data = (CameraData*) AiMalloc(sizeof(CameraData));
+   data->sg = AiShaderGlobals();
+   data->sg->Rt   = AI_RAY_CAMERA;
+   AiCameraInitialize(node, data);
 }
 node_update
 {
@@ -107,6 +115,12 @@ node_update
 }
 node_finish
 {
+   CameraData* data = (CameraData *)AiCameraGetLocalData(node);
+   if (data)
+   {
+      AiShaderGlobalsDestroy(data->sg);
+      AiFree(data);
+   }
    AiCameraDestroy(node);
 }
 camera_create_ray
@@ -127,8 +141,6 @@ camera_create_ray
 
    float mergeValue = _mergeShader;
    AtNode* mergeShader = AiNodeGetLink(node, "mergeShader");
-
-   AtShaderGlobals* filter_globals;
     
    // TODO:
    //Check that topMergeExp and bottomMergeExp have correct values
@@ -405,17 +417,16 @@ camera_create_ray
       }
       else
       {
-         filter_globals = AiShaderGlobals();
-         //filter_globals.tid = input->tid;
-         filter_globals->Op = NULL;
-         //filter_globals->x  = input->x;
-         //filter_globals->y  = input->y;
-         filter_globals->u  = 0.5f * (theta / AI_PI + 1.0f);
-         filter_globals->v  = 0.5f * (phi / AI_PIOVER2 + 1.0f);
-
-         AiShaderEvaluate(mergeShader, filter_globals);
-         factor = filter_globals->out.RGB.r;
-         AiShaderGlobalsDestroy(filter_globals);
+         CameraData* data = (CameraData*) AiCameraGetLocalData(node);
+         // copy and prepare the Shader Globals
+         AtShaderGlobals sg = *(data->sg);
+         sg.tid = tid;
+         sg.u  = 0.5f * (theta / AI_PI + 1.0f);
+         sg.v  = 0.5f * (phi / AI_PIOVER2 + 1.0f);
+         
+         AiShaderEvaluate(mergeShader, &sg);
+         
+         factor = sg.out.RGB.r;
       }
    }
    
