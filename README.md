@@ -3,7 +3,7 @@
 The following is an VR camera implementation built for the Arnold renderer, a Monte-Carlo unidirectional path-tracer developed by Solid Angle. The implementation is simple, basically two cameras offsetted by a distance with an specific 360º projection.
 
 For more information about this camera:
-http://www.pedrofe.com/vr_camera/
+http://www.pedrofe.com/oculus-camera/
 
 ##Instructions to compile the camera:
 - ##Windows:
