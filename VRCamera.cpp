@@ -5,7 +5,7 @@
 #include <ai_metadata.h>
 #include <ai_shaders.h>
 
-AI_CAMERA_NODE_EXPORT_METHODS(OculusCameraMethods);
+AI_CAMERA_NODE_EXPORT_METHODS(VRCameraMethods);
 namespace
 {
 #define _mode              (params[0].INT  )
@@ -438,9 +438,9 @@ node_loader
 {
    if (i > 0)
       return false;
-   node->methods      = OculusCameraMethods;
+   node->methods      = VRCameraMethods;
    node->output_type  = AI_TYPE_NONE;
-   node->name         = "oculusCamera";
+   node->name         = "vr_camera";
    node->node_type    = AI_NODE_CAMERA;
    strcpy(node->version, AI_VERSION);
    return true;

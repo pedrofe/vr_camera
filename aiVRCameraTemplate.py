@@ -1,5 +1,5 @@
 import mtoa.ui.ae.templates as templates
-class aiOculusCameraTemplate(templates.AttributeTemplate):
+class aiVRCameraTemplate(templates.AttributeTemplate):
     def setup(self):
         self.beginLayout("Main Attributes", collapse=False)
         self.addControl("aiMode")
@@ -21,4 +21,4 @@ class aiOculusCameraTemplate(templates.AttributeTemplate):
         self.endLayout()
 
         
-templates.registerTranslatorUI(aiOculusCameraTemplate, "camera", "oculusCamera")
+templates.registerTranslatorUI(aiVRCameraTemplate, "camera", "vr_camera")

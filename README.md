@@ -1,9 +1,9 @@
-# oculus-camera
+# vr_camera
 
-The following is an Oculus VR camera implementation built for the Arnold renderer, a Monte-Carlo unidirectional path-tracer developed by Solid Angle. The implementation is simple, basically two cameras offsetted by a distance with an specific 360º projection.
+The following is an VR camera implementation built for the Arnold renderer, a Monte-Carlo unidirectional path-tracer developed by Solid Angle. The implementation is simple, basically two cameras offsetted by a distance with an specific 360º projection.
 
 For more information about this camera:
-http://www.pedrofe.com/oculus-camera/
+http://www.pedrofe.com/vr_camera/
 
 ##Instructions to compile the camera:
 - ##Windows:
@@ -16,7 +16,7 @@ http://www.pedrofe.com/oculus-camera/
    `set ARNOLD_PATH="C:\solidangle\releases\Arnold-X.X.X.X-windows"`
   - Then, we will open a Visual Studio command prompt and execute the following command:
  
-   `cl /LD /I %ARNOLD_PATH%\include /EHsc OculusCamera.cpp /link /LIBPATH:%ARNOLD_PATH%\lib ai.lib`
+   `cl /LD /I %ARNOLD_PATH%\include /EHsc VRCamera.cpp /link /LIBPATH:%ARNOLD_PATH%\lib ai.lib`
 
 - ##OS X
  - Assuming you have installed Arnold in this folder:
@@ -28,9 +28,9 @@ http://www.pedrofe.com/oculus-camera/
    `export ARNOLD_PATH=/Users/userName/solidangle/Arnold-X.X.X.X-darwin`
   - Then, execute the following command to compile the camera shader:
 
-   `gcc -I$ARNOLD_PATH/include -L$ARNOLD_PATH/bin -lai -dynamiclib OculusCamera.cpp -o OculusCamera.dylib`
+   `gcc -I$ARNOLD_PATH/include -L$ARNOLD_PATH/bin -lai -dynamiclib VRCamera.cpp -o VRCamera.dylib`
    
 ##Installation Instructions:
 
-- Place the resulting `oculusCamera` binary and the `oculusCamera.mtd` files in this folder: %MTOA_PATH%\shaders\
-- Place the `aiOculusCameraTemplate.py` ?le in %MTOA_PATH%\scripts\mtoa\ui\ae\ folder
+- Place the resulting `VRCamera` binary and the `VRCamera.mtd` files in this folder: %MTOA_PATH%\shaders\
+- Place the `aiVRCameraTemplate.py` ?le in %MTOA_PATH%\scripts\mtoa\ui\ae\ folder
