@@ -1,0 +1,99 @@
+# THIRDPARTY_NODEID_VR_CAMERA      0x00116500
+[node vr_camera]
+    maya.name               STRING  "camera"
+    maya.id                 INT     0x00116500
+    maya.translator         STRING  "vr_camera"
+    c4d.classification      STRING  "surface"
+    c4d.menu                STRING  "vr_camera"
+    houdini.category        STRING  "vr_camera"
+    houdini.icon            STRING  "SHOP_surface"
+    houdini.label           STRING  "vr_camera"
+    houdini.help_url        STRING  "https://github.com/pedrofe/vr_camera"
+    houdini.order           STRING  "mode projection eyeSeparation eyeToNeckDistance topMergeMode topMergeAngle topMergeExp bottomMergeMode bottomMergeAngle bottomMergeExp mergeShader"
+    
+    [attr mode]
+        label               STRING  "Mode"
+        desc                STRING  "Mode"
+        maya.name           STRING  "aiMode"
+        houdini.type        STRING  "menu:single:menu"
+        houdini.menu        STRING  "0;Side By Side;1;Over Under;2;Under Over;3;Left Eye;4;Right Eye"
+        default             INT     0
+     
+    [attr projection]
+        label               STRING  "Projection"
+        desc                STRING  "Projection"
+        maya.name           STRING  "aiProjection"
+        houdini.type        STRING  "menu:single:menu"
+        houdini.menu        STRING  "0;Latlong;1;Cube Map (Nvidia);2;Cube Map (3x2)"
+        default             INT     0
+
+    [attr eyeSeparation]
+        label               STRING  "Eye Separation"
+        desc                STRING  "Eye Separation"
+        maya.name           STRING  "aiEyeSeparation"
+        softmin             FLOAT   0
+        softmax             FLOAT   1
+        default             FLOAT   0.65
+
+    [attr eyeToNeckDistance]
+        label               STRING  "Eye to Neck Distance"
+        desc                STRING  "Eye to Neck Distance"
+        maya.name           STRING  "aiEyeToNeckDistance"
+        softmin             FLOAT   0
+        softmax             FLOAT   1
+        default             FLOAT   0.0
+
+    [attr topMergeMode]
+        label               STRING  "Top Merge Mode"
+        desc                STRING  "Top Merge Mode"
+        maya.name           STRING  "aiTopMergeMode"
+        houdini.type        STRING  "menu:single:menu"
+        houdini.menu        STRING  "0;Off;1;Linear;2;Cos;3;Shader"
+        default             INT     2
+     
+    [attr topMergeAngle]
+        label               STRING  "Top Merge Angle"
+        desc                STRING  "Top Merge Angle"
+        maya.name           STRING  "aiTopMergeAngle"
+        softmin             FLOAT   0
+        max                 FLOAT   90
+        default             FLOAT   0
+        
+    [attr topMergeExp]
+        label               STRING  "Top Merge Exp"
+        desc                STRING  "Top Merge Exp"
+        maya.name           STRING  "aiTopMergeExp"
+        min                 FLOAT   0
+        softmax             FLOAT   4
+        default             FLOAT   1
+        
+    [attr bottomMergeMode]
+        label               STRING  "Bottom Merge Mode"
+        desc                STRING  "Bottom Merge Mode"
+        maya.name           STRING  "aiBottomMergeMode"
+        houdini.type        STRING  "menu:single:menu"
+        houdini.menu        STRING  "0;Off;1;Linear;2;Cos;3;Shader"
+        default             INT     2
+     
+    [attr bottomMergeAngle]
+        label               STRING  "Bottom Merge Angle"
+        desc                STRING  "Bottom Merge Angle"
+        maya.name           STRING  "aiBottomMergeAngle"
+        min                 FLOAT   -90
+        softmax             FLOAT   0
+        default             FLOAT   0
+        
+    [attr bottomMergeExp]
+        label               STRING  "Bottom Merge Exp"
+        desc                STRING  "Bottom Merge Exp"
+        maya.name           STRING  "aiBottomMergeExp"
+        min                 FLOAT   0
+        softmax             FLOAT   4
+        default             FLOAT   1
+
+    [attr mergeShader]
+        label               STRING  "Merge Shader"
+        desc                STRING  "Merge Shader"
+        maya.name           STRING  "aiMergeShader"
+        linkable            BOOL    True
+
