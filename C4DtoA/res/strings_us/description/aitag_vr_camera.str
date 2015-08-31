@@ -1,0 +1,21 @@
+STRINGTABLE aitag_vr_camera
+{
+    aitag_vr_camera                                    "Arnold vr_camera node";
+
+    C4DAI_VR_CAMERA_MAIN_GRP                           "VR Camera";
+    C4DAI_VR_CAMERA_MAIN_ATTRIBUTES_GRP                "Main Attributes";
+    C4DAI_VR_CAMERA_POLE_MERGEING_GRP                  "Pole Merging";
+    C4DAI_VR_CAMERA_EXTRAS_GRP                         "Extras";
+
+    C4DAIP_VR_CAMERA_MODE                              "Mode";
+    C4DAIP_VR_CAMERA_PROJECTION                        "Projection";            
+    C4DAIP_VR_CAMERA_EYESEPARATION                     "Eye Separation";         
+    C4DAIP_VR_CAMERA_EYETONECKDISTANCE                 "Eye to Neck Distance";    
+    C4DAIP_VR_CAMERA_TOPMERGEMODE                      "Top Merge Mode";        
+    C4DAIP_VR_CAMERA_TOPMERGEANGLE                     "Top Merge Angle";       
+    C4DAIP_VR_CAMERA_TOPMERGEEXP                       "Top Merge Exp";       
+    C4DAIP_VR_CAMERA_BOTTOMMERGEMODE                   "Bottom Merge Mode";     
+    C4DAIP_VR_CAMERA_BOTTOMMERGEANGLE                  "Bottom Merge Angle";     
+    C4DAIP_VR_CAMERA_BOTTOMMERGEEXP                    "Bottom Merge Exp";      
+    C4DAIP_VR_CAMERA_MERGESHADER                       "Merge Shader";       
+}
