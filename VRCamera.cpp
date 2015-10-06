@@ -84,6 +84,22 @@ enum merge_zone
 struct CameraData
 {
    AtShaderGlobals* sg;
+   float frame_aspect_ratio;
+   
+   int mode;
+   int projection;
+   float eyeSeparation;
+   float eyeToNeckDistance;
+   
+   int topMergeMode;
+   float topMergeAngle;
+   float topMergeExp;
+   int bottomMergeMode;
+   float bottomMergeAngle;
+   float bottomMergeExp;
+   
+   float mergeValue;
+   AtNode* mergeShader;
 };
 
 };
@@ -107,10 +123,49 @@ node_initialize
    CameraData *data = (CameraData*) AiMalloc(sizeof(CameraData));
    data->sg = AiShaderGlobals();
    data->sg->Rt   = AI_RAY_CAMERA;
+
+   AtNode *options = AiUniverseGetOptions();
+   float xres = AiNodeGetInt(options, "xres");
+   float yres = AiNodeGetInt(options, "yres");
+   float pixel_aspect_ratio = AiNodeGetFlt(options, "aspect_ratio");
+   data->frame_aspect_ratio = xres / pixel_aspect_ratio / yres;
+
    AiCameraInitialize(node, data);
 }
 node_update
 {
+   CameraData* data = (CameraData*) AiCameraGetLocalData(node);
+    
+   data->mode = _mode;
+   data->projection = _projection;
+   data->eyeSeparation = _eyeSeparation;
+   data->eyeToNeckDistance = _eyeToNeckDistance;
+   
+   data->topMergeMode = _topMergeMode;
+   data->topMergeAngle = _topMergeAngle * AI_PI / 180.0f;
+   data->topMergeExp = _topMergeExp;
+   data->bottomMergeMode = _bottomMergeMode;
+   data->bottomMergeAngle = _bottomMergeAngle * AI_PI / 180.0f;
+   data->bottomMergeExp = _bottomMergeExp;
+   
+   // Check that merge angles and exponents are in the correct ranges
+   if(data->topMergeExp < 0.0f)
+      data->topMergeExp = 0.0f;
+   if(data->bottomMergeExp < 0.0f)
+      data->bottomMergeExp = 0.0f;
+   
+   if(data->topMergeAngle > AI_PIOVER2 - AI_EPSILON)
+      data->topMergeAngle = AI_PIOVER2 - AI_EPSILON;
+   else if(data->topMergeAngle < -AI_PIOVER2 + AI_EPSILON)
+      data->topMergeAngle = -AI_PIOVER2 + AI_EPSILON;
+   if(data->bottomMergeAngle < -AI_PIOVER2 + AI_EPSILON)
+      data->bottomMergeAngle = -AI_PIOVER2 + AI_EPSILON;
+   else if(data->bottomMergeAngle > data->topMergeAngle)
+      data->bottomMergeAngle = data->topMergeAngle;
+      
+   data->mergeValue = _mergeShader;
+   data->mergeShader = AiNodeGetLink(node, "mergeShader");
+   
    AiCameraUpdate(node, false);
 }
 node_finish
@@ -125,39 +180,12 @@ node_finish
 }
 camera_create_ray
 {
-   const AtParamValue* params = AiNodeGetParams(node);
-    
-   int mode = _mode;
-   int projection = _projection;
-   float eyeSeparation = _eyeSeparation;
-   float eyeToNeckDistance = _eyeToNeckDistance;
-   
-   int topMergeMode = _topMergeMode;
-   float topMergeAngle = _topMergeAngle * AI_PI / 180.0f;
-   float topMergeExp = _topMergeExp;
-   int bottomMergeMode = _bottomMergeMode;
-   float bottomMergeAngle = _bottomMergeAngle * AI_PI / 180.0f;
-   float bottomMergeExp = _bottomMergeExp;
-
-   float mergeValue = _mergeShader;
-   AtNode* mergeShader = AiNodeGetLink(node, "mergeShader");
-    
-   // TODO:
-   //Check that topMergeExp and bottomMergeExp have correct values
-   if(topMergeAngle > AI_PIOVER2)
-      topMergeAngle = AI_PIOVER2;
-   else if(topMergeAngle < -AI_PIOVER2)
-      topMergeAngle = -AI_PIOVER2;
-   if(bottomMergeAngle < -AI_PIOVER2)
-      bottomMergeAngle = -AI_PIOVER2;
-   else if(bottomMergeAngle > topMergeAngle)
-      bottomMergeAngle = topMergeAngle;
-
+   CameraData* data = (CameraData*) AiCameraGetLocalData(node);
 
    int currentEye = E_RIGHT_EYE;
    int mergeZone = Z_NONE;
    float sx = input->sx;
-   float sy = input->sy;
+   float sy = input->sy * data->frame_aspect_ratio;
 
    // These values are needed for every projection to be able to calculate
    //   the camera position due eye separation and pole merge
@@ -171,50 +199,50 @@ camera_create_ray
    //  Decide what eye we are rendering. If needed update sx and sy.
    ////////////////////////////////////////////////////
 
-   if(mode == M_SBS)
+   if(data->mode == M_SBS)
    {
-      if(input->sx < 0)
+      if(sx < 0)
       {
          currentEye = E_LEFT_EYE;
-         sx = 2 * (input->sx + 0.5f);
+         sx = 2 * (sx + 0.5f);
       }
       else
       {
          currentEye = E_RIGHT_EYE;
-         sx = 2 * (input->sx - 0.5f);
+         sx = 2 * (sx - 0.5f);
       }     
    }
-   else if (mode == M_OU)
+   else if (data->mode == M_OU)
    {
-      if(input->sy < 0)
+      if(sy < 0)
       {
          currentEye = E_RIGHT_EYE;
-         sy = 2 * (input->sy + 0.5f);
+         sy = 2 * (sy + 0.5f);
       }
       else
       {
          currentEye = E_LEFT_EYE;
-         sy = 2 * (input->sy - 0.5f);
+         sy = 2 * (sy - 0.5f);
       }    
    }
-   else if (mode == M_UO)
+   else if (data->mode == M_UO)
    {
-      if(input->sy < 0)
+      if(sy < 0)
       {
          currentEye = E_LEFT_EYE;
-         sy = 2 * (input->sy + 0.5f);
+         sy = 2 * (sy + 0.5f);
       }
       else
       {
          currentEye = E_RIGHT_EYE;
-         sy = 2 * (input->sy - 0.5f);
+         sy = 2 * (sy - 0.5f);
       }    
    }
-   else if (mode == M_LE)
+   else if (data->mode == M_LE)
    {
       currentEye = E_LEFT_EYE;
    }
-   else if (mode == M_RE)
+   else if (data->mode == M_RE)
    {
       currentEye = E_RIGHT_EYE;
    }
@@ -223,7 +251,7 @@ camera_create_ray
    // Proyection type
    ////////////////////////////////////////////////////
 
-   if (projection == P_LATLONG)
+   if (data->projection == P_LATLONG)
    {
       // Calculate spherical angles
       theta = AI_PI      * sx;
@@ -239,7 +267,7 @@ camera_create_ray
       output->dir.y =  sin_phi;
       output->dir.z = -cos_theta * cos_phi;
    }
-   else if(projection == P_CUBEMAP_NVD)
+   else if(data->projection == P_CUBEMAP_NVD)
    {
       if (sx < -2*(1.0f / 3.0f))
       {
@@ -290,7 +318,7 @@ camera_create_ray
       sin_theta = sinf(theta);
       cos_theta = cosf(theta);
    }
-   else if(projection == P_CUBEMAP_3x2)
+   else if(data->projection == P_CUBEMAP_3x2)
    {
       if (sy < 0.0f)
       {
@@ -355,13 +383,13 @@ camera_create_ray
 
    if(currentEye == E_LEFT_EYE)
    {
-      output->origin.x = -0.5*eyeSeparation*cos_theta + eyeToNeckDistance*sin_theta;
-      output->origin.z = -0.5*eyeSeparation*sin_theta - eyeToNeckDistance*cos_theta;
+      output->origin.x = -0.5*data->eyeSeparation*cos_theta + data->eyeToNeckDistance*sin_theta;
+      output->origin.z = -0.5*data->eyeSeparation*sin_theta - data->eyeToNeckDistance*cos_theta;
    }
    else
    {
-      output->origin.x = 0.5*eyeSeparation*cos_theta + eyeToNeckDistance*sin_theta;
-      output->origin.z = 0.5*eyeSeparation*sin_theta - eyeToNeckDistance*cos_theta;
+      output->origin.x = 0.5*data->eyeSeparation*cos_theta + data->eyeToNeckDistance*sin_theta;
+      output->origin.z = 0.5*data->eyeSeparation*sin_theta - data->eyeToNeckDistance*cos_theta;
    }
    
 
@@ -381,50 +409,49 @@ camera_create_ray
    //    cos:
    //      ( cos( (phi - offset) * ( -pi / (pi + 2*offset) ) ) ) ^ exp
 
-   if(phi > topMergeAngle)
+   if(phi > data->topMergeAngle)
    {
       mergeZone = Z_UP;
    }
-   else if(phi < bottomMergeAngle)
+   else if(phi < data->bottomMergeAngle)
    {
       mergeZone = Z_BOTTOM;
    }
 
 
    float factor = 1.0f;
-   if(((topMergeMode == M_LINEAR) && (mergeZone == Z_UP)) ||
-      ((bottomMergeMode == M_LINEAR) && (mergeZone == Z_BOTTOM)))
+   if(((data->topMergeMode == M_LINEAR) && (mergeZone == Z_UP)) ||
+      ((data->bottomMergeMode == M_LINEAR) && (mergeZone == Z_BOTTOM)))
    {
       if(mergeZone == Z_UP)
-         factor = (-2.0f * phi + AI_PI) / (AI_PI - 2*topMergeAngle);
+         factor = (-2.0f * phi + AI_PI) / (AI_PI - 2*data->topMergeAngle);
       else
-         factor = (2.0f * phi + AI_PI) / (AI_PI + 2*bottomMergeAngle);
+         factor = (2.0f * phi + AI_PI) / (AI_PI + 2*data->bottomMergeAngle);
    }
-   else if(((topMergeMode == M_COS) && (mergeZone == Z_UP)) ||
-      ((bottomMergeMode == M_COS) && (mergeZone == Z_BOTTOM)))
+   else if(((data->topMergeMode == M_COS) && (mergeZone == Z_UP)) ||
+      ((data->bottomMergeMode == M_COS) && (mergeZone == Z_BOTTOM)))
    {
       if(mergeZone == Z_UP)
-         factor = powf( MAX(0.0f, cosf( (phi - topMergeAngle) * (AI_PI / (AI_PI - 2.0f*topMergeAngle)) )), topMergeExp );
+         factor = powf( MAX(0.0f, cosf( (phi - data->topMergeAngle) * (AI_PI / (AI_PI - 2.0f*data->topMergeAngle)) )), data->topMergeExp );
       else
-         factor = powf( MAX(0.0f, cosf( (phi - bottomMergeAngle) * (-AI_PI / (AI_PI + 2.0f*bottomMergeAngle)) )), bottomMergeExp );
+         factor = powf( MAX(0.0f, cosf( (phi - data->bottomMergeAngle) * (-AI_PI / (AI_PI + 2.0f*data->bottomMergeAngle)) )), data->bottomMergeExp );
    }
-   else if(((topMergeMode == M_SHADER) && (mergeZone == Z_UP)) ||
-      ((bottomMergeMode == M_SHADER) && (mergeZone == Z_BOTTOM)))
+   else if(((data->topMergeMode == M_SHADER) && (mergeZone == Z_UP)) ||
+      ((data->bottomMergeMode == M_SHADER) && (mergeZone == Z_BOTTOM)))
    {
-      if(mergeShader == NULL)
+      if(data->mergeShader == NULL)
       {
-         factor = mergeValue;
+         factor = data->mergeValue;
       }
       else
       {
-         CameraData* data = (CameraData*) AiCameraGetLocalData(node);
          // copy and prepare the Shader Globals
          AtShaderGlobals sg = *(data->sg);
          sg.tid = tid;
          sg.u  = 0.5f * (theta / AI_PI + 1.0f);
          sg.v  = 0.5f * (phi / AI_PIOVER2 + 1.0f);
          
-         AiShaderEvaluate(mergeShader, &sg);
+         AiShaderEvaluate(data->mergeShader, &sg);
          
          factor = sg.out.RGB.r;
       }
